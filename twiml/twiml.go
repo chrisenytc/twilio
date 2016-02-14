@@ -81,6 +81,33 @@ func (r *Response) Gather(structs ...interface{}) error {
 	return nil
 }
 
+// Gather collects digits a caller enter by pressing the keypad
+// Valid verb: Gather. Valid nested verbs: Say, Pause, Play
+func (r *Response) AppendGather(gather *Gather, structs ...interface{}) error {
+	for _, s := range structs {
+		switch s := s.(type) {
+		default:
+			return fmt.Errorf("non valid verb: '%T'", s)
+		case Gather:
+			gather.FinishOnKey = s.FinishOnKey
+			gather.NumDigits = s.NumDigits
+			gather.Timeout = s.Timeout
+			gather.Action = s.Action
+			gather.Method = s.Method
+		case Say, Pause, Play: // Valid nested verbs
+			gather.Nested = append(gather.Nested, s)
+		}
+
+	}
+	return nil
+}
+
+// Dynamic Gather appends another gathers
+func (r *Response) DynamicGather(gather Gather) error {
+	r.Response = append(r.Response, gather)
+	return nil
+}
+
 // Send sends xml encoded response to writer
 func (r Response) Send(w io.Writer) (err error) {
 	enc := xml.NewEncoder(w)
